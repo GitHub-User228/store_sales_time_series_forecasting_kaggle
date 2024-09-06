@@ -65,6 +65,59 @@ def iqr_filter(
     return data
 
 
+def iqr_clipper(
+    data: pd.DataFrame,
+    features: dict[str],
+    is_submission_col: str | None = None,
+    verbose: bool = True,
+) -> pd.DataFrame:
+    """
+
+    Args:
+        data (pd.DataFrame):
+            The input DataFrame to filter.
+        features (dict[str]):
+            Dictionary of feature names and their corresponding
+            threshold values for the IQR filter.
+        verbose (bool):
+            Whether to print the number of rows removed
+            and the percentage of rows removed.
+            Defaults to True.
+
+    Returns:
+        pd.DataFrame:
+            The input DataFrame without outliers.
+    """
+    len_old = len(data)
+    mask = pd.Series(True, index=data.index)
+    for feature, threshold in features.items():
+        Q1 = data[feature].quantile(0.25)
+        Q3 = data[feature].quantile(0.75)
+        IQR = Q3 - Q1
+        lower = Q1 - threshold * IQR
+        upper = Q3 + threshold * IQR
+        if is_submission_col:
+            mask &= (
+                ((data[feature] >= lower) & (data[feature] <= upper))
+                | (data[feature].isna())
+                | (data[is_submission_col] == True)
+            )
+        else:
+            mask &= (
+                (data[feature] >= lower) & (data[feature] <= upper)
+            ) | data[feature].isna()
+        data.loc[data[feature].notnull(), feature] = data.loc[
+            data[feature].notnull(), feature
+        ].clip(lower, upper)
+    len_new = sum(mask)
+    if verbose:
+        print(
+            f"Clipped {len_old - len_new} outliers, ratio - "
+            f"{round(100 * (len_old - len_new) / len_old, 2)}%"
+        )
+    return data, mask
+
+
 @ensure_annotations
 def get_bins(x: int) -> int:
     """

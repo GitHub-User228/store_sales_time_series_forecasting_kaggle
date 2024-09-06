@@ -4,6 +4,8 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 from ensure import ensure_annotations
 import matplotlib.gridspec as gridspec
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.tsa.seasonal import seasonal_decompose
 
 from sales_project.utils import get_bins
 
@@ -159,7 +161,7 @@ def train_submission_countplot(
     df: pd.DataFrame,
     col: str,
     is_submission_col: str,
-) -> None:
+):
     """
     Plots a count plot with three subplots: one for all data,
     one for train data, and one for submission data.
@@ -203,3 +205,53 @@ def train_submission_countplot(
     )
     ax[1].legend()
     fig.tight_layout()
+
+
+def decomposition_plot(
+    data: pd.DataFrame,
+    x: str,
+) -> None:
+    """
+    Plots the decomposition of a time series into trend,
+    seasonal, and residual components. Also checks for stationarity
+    via the Augmented Dickey-Fuller test.
+
+    Args:
+        data (pd.DataFrame):
+            The input data frame.
+        x (str):
+            The column name containing the time series data.
+    """
+
+    decomposition = seasonal_decompose(data[x], model="additive")
+
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(
+        4, 1, figsize=(14, 5 * 4), dpi=100
+    )
+
+    decomposition.observed.plot(ax=ax1, legend=False)
+    ax1.set_ylabel("Observed")
+
+    decomposition.trend.plot(ax=ax2, legend=False)
+    ax2.set_ylabel("Trend")
+
+    decomposition.seasonal.plot(ax=ax3, legend=False)
+    ax3.set_ylabel("Seasonal")
+
+    decomposition.resid.plot(ax=ax4, legend=False)
+    ax4.set_ylabel("Residual")
+
+    plt.tight_layout()
+    plt.show()
+
+    result = adfuller(decomposition.resid.dropna())
+    print("-" * 30)
+    print("Checking residuals for stationarity:")
+    print("- ADF Statistic:", result[0])
+    print("- p-value:", result[1])
+    if result[1] < 0.05:
+        print("Rejected the null hypothesis: the time series is stationary")
+    else:
+        print(
+            "Can't reject the null hypothesis: the time series is non-stationary"
+        )
