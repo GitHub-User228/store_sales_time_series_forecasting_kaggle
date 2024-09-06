@@ -27,5 +27,5 @@ This repository covers the following ML lifecycle steps:
 
 RMSLE scores:
 
-- Baseline LightGBM - 0.69694
-- Baseline XGBoost - 0.67744
+- Baseline LightGBM - 0.67209
+- Baseline XGBoost - 0.64114
