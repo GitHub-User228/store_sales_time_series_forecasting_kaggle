@@ -1,13 +1,14 @@
 import json
 import joblib
+import itertools
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from tqdm.auto import tqdm
 from ensure import ensure_annotations
+from scipy.stats import ks_2samp, anderson_ksamp
 
 
-@ensure_annotations
 def iqr_filter(
     data: pd.DataFrame,
     features: dict[str],
@@ -52,9 +53,9 @@ def iqr_filter(
                 data[is_submission_col], feature
             ].clip(lower, upper)
         else:
-            mask &= ((data[feature] >= lower) & (data[feature] <= upper)) | data[
-                feature
-            ].isna()
+            mask &= (
+                (data[feature] >= lower) & (data[feature] <= upper)
+            ) | data[feature].isna()
     data = data[mask]
     if verbose:
         print(
@@ -101,13 +102,17 @@ def save_predictions(df_submission: pd.DataFrame, filename: str):
         filename (str):
             The name of the csv file to save the predictions to
     """
-    submission = pd.read_csv("../data/raw/sample_submission.csv").drop(columns="sales")
+    submission = pd.read_csv("../data/raw/sample_submission.csv").drop(
+        columns="sales"
+    )
     submission = submission.merge(
         df_submission[["sales"]].reset_index(),
         on="id",
         how="left",
     )
-    submission[["id", "sales"]].to_csv(f"../data/submissions/{filename}", index=False)
+    submission[["id", "sales"]].to_csv(
+        f"../data/submissions/{filename}", index=False
+    )
     print(f"csv file saved at: ../data/predictions/{filename}")
 
 
@@ -174,16 +179,22 @@ def save_pkl(model: object, path: Path):
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
     except Exception as e:
-        raise Exception(f"An error occurred while creating the directory: {e}") from e
+        raise Exception(
+            f"An error occurred while creating the directory: {e}"
+        ) from e
 
     try:
         with open(path, "wb") as f:
             joblib.dump(model, f)
         print(f"Model file saved at: {path}")
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Directory '{path.parent}' does not exist: {e}") from e
+        raise FileNotFoundError(
+            f"Directory '{path.parent}' does not exist: {e}"
+        ) from e
     except IOError as e:
-        raise IOError(f"An I/O error occurred while saving the model: {e}") from e
+        raise IOError(
+            f"An I/O error occurred while saving the model: {e}"
+        ) from e
     except Exception as e:
         raise Exception(
             f"An unexpected error occurred while saving the model: {e}"
@@ -224,7 +235,9 @@ def read_pkl(path: Path) -> object:
     except FileNotFoundError as e:
         raise FileNotFoundError(f"File '{path}' does not exist: {e}") from e
     except IOError as e:
-        raise IOError(f"An I/O error occurred while loading the model: {e}") from e
+        raise IOError(
+            f"An I/O error occurred while loading the model: {e}"
+        ) from e
     except Exception as e:
         raise Exception(
             f"An unexpected error occurred while loading the model: {e}"
@@ -266,10 +279,77 @@ def save_dict_as_json(data: dict, path: Path):
             json.dump(data, f, indent=4)
         print(f"JSON file saved at: {path}")
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Directory '{path.parent}' does not exist: {e}") from e
+        raise FileNotFoundError(
+            f"Directory '{path.parent}' does not exist: {e}"
+        ) from e
     except IOError as e:
-        raise IOError(f"An I/O error occurred while saving the JSON file: {e}") from e
+        raise IOError(
+            f"An I/O error occurred while saving the JSON file: {e}"
+        ) from e
     except Exception as e:
         raise Exception(
             f"An unexpected error occurred while saving the JSON file: {e}"
         ) from e
+
+
+def compare_disributions(
+    data: pd.DataFrame,
+    subsets: list[str],
+    feature: str,
+    significance_level: float = 0.05,
+):
+    """
+    Compares the distributions of a feature across multiple subsets of
+    a DataFrame.
+
+    Args:
+        data (pd.DataFrame):
+            The DataFrame containing the data to be analyzed.
+        subsets (list[str]):
+            A list of subset names to compare.
+        feature (str):
+            The name of the feature to compare across the subsets.
+        significance_level (float, optional):
+            The significance level to use for the statistical tests.
+            Defaults to 0.05.
+
+    Returns:
+        pd.DataFrame:
+            A DataFrame containing the results of the statistical tests,
+            including the p-values and whether the distributions are
+            considered similar or not.
+    """
+
+    pvalues = pd.DataFrame(
+        list(itertools.combinations(subsets, 2)),
+        columns=["subset1", "subset2"],
+    )
+    pvalues["ks_2samp.pvalue"] = None
+    pvalues["anderson_ksamp.pvalue"] = None
+    pvalues["significance_level"] = significance_level
+
+    for i in tqdm(pvalues.index):
+        subset1 = pvalues.loc[i, "subset1"]
+        subset2 = pvalues.loc[i, "subset2"]
+        _, p_value = ks_2samp(
+            data.query(f"subset == '{subset1}'")[feature],
+            data.query(f"subset == '{subset2}'")[feature],
+        )
+        pvalues.loc[i, "ks_2samp.pvalue"] = p_value
+
+        res = anderson_ksamp(
+            [
+                data.query(f"subset == '{subset1}'")[feature],
+                data.query(f"subset == '{subset2}'")[feature],
+            ]
+        )
+        pvalues.loc[i, "anderson_ksamp.pvalue"] = res.pvalue
+
+    pvalues["ks_2samp.are_similar"] = (
+        pvalues["ks_2samp.pvalue"] >= significance_level
+    )
+    pvalues["anderson_ksamp.are_similar"] = (
+        pvalues["anderson_ksamp.pvalue"] >= significance_level
+    )
+
+    return pvalues

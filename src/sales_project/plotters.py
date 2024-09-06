@@ -3,10 +3,13 @@ import seaborn as sns
 from typing import Tuple
 import matplotlib.pyplot as plt
 from ensure import ensure_annotations
+import matplotlib.gridspec as gridspec
 
 from sales_project.utils import get_bins
 
-sns.set_theme(context="talk", style="darkgrid", palette="dark", font="sans-serif")
+sns.set_theme(
+    context="talk", style="darkgrid", palette="dark", font="sans-serif"
+)
 
 
 # @ensure_annotations
@@ -49,9 +52,13 @@ def linear_plot(
     plt.figure(figsize=figsize)
     if use_index:
         if linear:
-            sns.lineplot(x=data.index, y=data[y], hue=data[hue] if hue else None)
+            sns.lineplot(
+                x=data.index, y=data[y], hue=data[hue] if hue else None
+            )
         if scatter:
-            sns.scatterplot(x=data.index, y=data[y], hue=data[hue] if hue else None)
+            sns.scatterplot(
+                x=data.index, y=data[y], hue=data[hue] if hue else None
+            )
     else:
         if linear:
             sns.lineplot(data=data, x=x, y=y, hue=hue if hue else None)
@@ -67,9 +74,12 @@ def linear_plot(
     plt.show()
 
 
-@ensure_annotations
 def hist_box_plot(
-    df: pd.DataFrame, feature: str, kde: bool = False, label: str | None = None
+    df: pd.DataFrame,
+    feature: str,
+    kde: bool = False,
+    hue: str | None = None,
+    figsize: Tuple[int, int] = (15, 9),
 ) -> None:
     """
     Plots a histogram and box plot for a given feature in a DataFrame.
@@ -86,15 +96,62 @@ def hist_box_plot(
             The label to use for the feature.
             If not provided, the feature name will be used.
     """
-    if label == None:
-        label = feature
     data = df[feature].dropna()
-    plt.figure(figsize=(15, 6))
-    sns.histplot(data, bins=get_bins(len(data)), kde=kde)
-    plt.xlabel(label)
-    plt.figure(figsize=(15, 3))
-    sns.boxplot(data, orient="h")
-    plt.xlabel(label)
+
+    fig = plt.figure(figsize=figsize)
+    gs = gridspec.GridSpec(2, 1, height_ratios=[2, 1])
+    fig.tight_layout()
+
+    ax1 = fig.add_subplot(gs[0])
+    sns.histplot(data, bins=get_bins(len(data)), hue=hue, kde=kde, ax=ax1)
+    ax1.set_xlabel("")
+
+    ax2 = fig.add_subplot(gs[1])
+    sns.boxplot(data, orient="h", hue=hue, ax=ax2)
+
+    plt.show()
+
+
+# def train_submission_hist_box_plot(
+#     df: pd.DataFrame,
+#     feature: str,
+#     kde: bool = False,
+#     figsize: Tuple[int, int] = (15, 9),
+# ) -> None:
+#     """
+#     Plots a histogram and box plot for a given feature in a DataFrame.
+
+#     Args:
+#         df (pd.DataFrame):
+#             The input DataFrame.
+#         feature (str):
+#             The column name of the feature to plot.
+#         kde (bool, optional):
+#             Whether to plot a kernel density estimate on the histogram.
+#             Defaults to False.
+#         label (str, optional):
+#             The label to use for the feature.
+#             If not provided, the feature name will be used.
+#     """
+#     data = df[feature].dropna()
+
+#     fig = plt.figure(figsize=figsize)
+#     gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1])
+#     fig.tight_layout()
+
+#     ax = fig.add_subplot(gs[0, 0])
+#     sns.histplot(
+#         df.query(f"{is_submission_col} == False"),
+#         bins=get_bins(len(data)),
+#         kde=kde,
+#         ax=ax,
+#     )
+#     ax.set_xlabel("")
+
+#     ax = fig.add_subplot(gs[1])
+#     sns.boxplot(data, orient="h", ax=ax)
+
+#     plt.show()
 
 
 @ensure_annotations

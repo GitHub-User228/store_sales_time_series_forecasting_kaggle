@@ -55,7 +55,7 @@ class ClippingRegressor(BaseEstimator, RegressorMixin):
         self.base_estimator.fit(X, y)
         return self
 
-    def predict(self, X):
+    def predict(self, X) -> np.ndarray:
         """
         Applies clipping to the predictions made by the base estimator.
 
@@ -67,5 +67,7 @@ class ClippingRegressor(BaseEstimator, RegressorMixin):
             The predictions made by the base estimator, clipped to the
             specified minimum and maximum values.
         """
-        predictions = self.base_estimator.predict(X)
-        return np.clip(predictions, self.min_value, self.max_value)
+        predictions = np.clip(
+            self.base_estimator.predict(X), self.min_value, self.max_value
+        )
+        return predictions

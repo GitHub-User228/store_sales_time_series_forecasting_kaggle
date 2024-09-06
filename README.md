@@ -18,6 +18,7 @@ This repository covers the following ML lifecycle steps:
     - dealing with duplicates
     - dealing with missing values (interpolation, time-based imputation)
     - dealing with outliers (IQR filtering, Isolation Forest)
+    - rescaling the target feature
 - Baseline model
     - LightGBM with default hyperparameters
     - XGBoost with default hyperparameters
@@ -26,5 +27,5 @@ This repository covers the following ML lifecycle steps:
 
 RMSLE scores:
 
-- Baseline LightGBM - 0.85039
-- Baseline XGBoost - 0.82583
+- Baseline LightGBM - 0.69694
+- Baseline XGBoost - 0.67744

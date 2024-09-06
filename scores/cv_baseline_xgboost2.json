@@ -1,0 +1,9 @@
+{
+    "fit_time": 9.724,
+    "score_time": 0.5597,
+    "test_mean_absolute_error": 0.0282,
+    "test_root_mean_squared_error": 0.0463,
+    "test_mean_absolute_percentage_error": 49395102750985.63,
+    "test_root_mean_squared_log_error": 0.0422,
+    "test_r2": 0.3293
+}
