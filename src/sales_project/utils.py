@@ -159,7 +159,7 @@ def save_predictions(df_submission: pd.DataFrame, filename: str):
         columns="sales"
     )
     submission = submission.merge(
-        df_submission[["sales"]].reset_index(),
+        df_submission[["id", "sales"]],
         on="id",
         how="left",
     )
@@ -170,7 +170,7 @@ def save_predictions(df_submission: pd.DataFrame, filename: str):
 
 
 @ensure_annotations
-def reduce_size(df: pd.DataFrame):
+def reduce_size(df: pd.DataFrame, verbose: bool = True):
     """
     Reduces the size of the DataFrame by converting integer
     and float columns to smaller data types.
@@ -184,7 +184,8 @@ def reduce_size(df: pd.DataFrame):
         df (pd.DataFrame):
             The DataFrame to be reduced in size.
     """
-    for col in tqdm(df.columns):
+    iterator = tqdm(df.columns) if verbose else df.columns
+    for col in iterator:
         if "int" in df[col].dtype.name:
             if df[col].min() >= 0:
                 if df[col].max() <= 255:

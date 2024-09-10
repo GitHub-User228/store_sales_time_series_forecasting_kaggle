@@ -13,7 +13,7 @@ Repository which contains code for the Kaggle competition: [Store Sales - Time S
 
 # Description
 
-This repository covers the following ML lifecycle steps:
+This repository covers the following steps:
 - EDA (data cleaning part)
     - dealing with duplicates
     - dealing with missing values (interpolation, time-based imputation)
@@ -22,6 +22,19 @@ This repository covers the following ML lifecycle steps:
 - Baseline model
     - LightGBM with default hyperparameters
     - XGBoost with default hyperparameters
+- EDA (data analysis part):
+    - univariate distribution analysis
+    - multivariate distribution analysis with target feature
+    - time series analysis
+    - correlation analysis
+- Feature Engineering:
+    - time features (year, month, weekday)
+    - rolling and expanding features from target feature
+    - lag features
+- Models after Feature Engineering:
+    - LightGBM with default hyperparameters
+    - XGBoost with default hyperparameters
+
 
 # Kaggle results
 
@@ -29,3 +42,5 @@ RMSLE scores:
 
 - Baseline LightGBM - 0.67209
 - Baseline XGBoost - 0.64114
+- LightGBM after Feature Engineering - 0.49560
+- XGBoost after Feature Engineering - 0.51744
